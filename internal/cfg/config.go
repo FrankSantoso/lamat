@@ -2,7 +2,6 @@ package cfg
 
 import (
 	"github.com/spf13/viper"
-	"log"
 	"strings"
 )
 
@@ -38,9 +37,9 @@ func ReadConfig(cfgpath string) (*Config, error) {
 // getConfigFile returns config-file-path and the name of config file.
 func getConfigFile(filepath string) (string, string) {
 	cfgSlice := strings.Split(filepath, "/")
-	log.Printf("Path: %s, filename: %s",
-		strings.Join(cfgSlice[:len(cfgSlice)-1], "/"),
-		cfgSlice[len(cfgSlice)-1])
+	// log.Printf("Path: %s, filename: %s",
+	// 	strings.Join(cfgSlice[:len(cfgSlice)-1], "/"),
+	// 	cfgSlice[len(cfgSlice)-1])
 	return strings.Join(cfgSlice[:len(cfgSlice)-1], "/"),
 		cfgSlice[len(cfgSlice)-1]
 }
