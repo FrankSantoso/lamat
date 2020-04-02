@@ -6,7 +6,6 @@ import (
 	"github.com/codingsince1985/geo-golang/chained"
 	"github.com/codingsince1985/geo-golang/google"
 	"github.com/codingsince1985/geo-golang/mapquest/nominatim"
-	"github.com/codingsince1985/geo-golang/openstreetmap"
 	"io"
 	"os"
 	"reflect"
@@ -15,14 +14,7 @@ import (
 
 	"github.com/codingsince1985/geo-golang"
 	"github.com/fatih/color"
-	"github.com/fatih/structs"
 )
-
-// GeoGetter interface outputs formatted
-type GeoGetter interface {
-	GetGeocode() error
-	GetReverseGeocode() error
-}
 
 // Geo struct represents geocoder struct
 type Geo struct {
@@ -32,9 +24,8 @@ type Geo struct {
 
 func NewGeo(conf *cfg.Config, args []string) *Geo {
 	geocoder := chained.Geocoder(
-		google.Geocoder(conf.APIKeys.GoogleGeocode),
 		nominatim.Geocoder(conf.APIKeys.Nominatim),
-		openstreetmap.Geocoder(),
+		google.Geocoder(conf.APIKeys.GoogleGeocode),
 	)
 	return &Geo{
 		geocoder, args,
@@ -45,7 +36,6 @@ var (
 	errColor    = color.New(color.FgRed).SprintFunc()
 	infoColor   = color.New(color.FgBlue).SprintFunc()
 	stringColor = color.New(color.FgGreen).SprintFunc()
-	warnColor   = color.New(color.FgYellow).SprintFunc()
 )
 
 func getTabWriterOutput() *tabwriter.Writer {
@@ -61,10 +51,11 @@ func (g *Geo) GetGeocode() error {
 		return err
 	}
 	printRow(out, "\n%s\t%s\t%s\n", infoColor("Address"), g.args[0])
-	locmap := structs.Map(location)
-	if err = printRows(out, locmap); err != nil {
-		return err
+	if location != nil {
+		locRef := reflect.ValueOf(*location)
+		printRows(out, locRef)
 	}
+
 	out.Flush()
 	return nil
 }
@@ -81,25 +72,24 @@ func (g *Geo) GetReverseGeocode() error {
 		fmt.Fprintf(out, "\n%s\t%s\n", errColor("Error:"), err)
 		return err
 	}
-	jmap := structs.Map(gcode)
-	if err = printRows(out, jmap); err != nil {
-		return err
+	if gcode != nil {
+		gref := reflect.ValueOf(*gcode)
+		printRows(out, gref)
 	}
 	out.Flush()
 	return nil
 }
 
-func printRows(out *tabwriter.Writer, rows map[string]interface{}) error {
-	for k, v := range rows {
-		t := reflect.TypeOf(v).Name()
-		if t == "string" && v != "" {
-			printRow(out, "\n%s\t%s\t%s", k, v)
-		} else if t == "float64" {
-			printRow(out, "\n%s\t%s\t%.6f", k, v)
+func printRows(out *tabwriter.Writer, rows reflect.Value) {
+	for i := 0; i < rows.NumField(); i++ {
+		if rows.Field(i).String() != "" {
+			printRow(
+				out, "\n%s\t%s\t%v",
+				rows.Type().Field(i).Name,
+				rows.Field(i).Interface(),
+			)
 		}
-		printRow(out, "\n%s\t%s\t%v", k, v)
 	}
-	return nil
 }
 
 func printRow(out io.Writer, format, key string, value interface{}) {
