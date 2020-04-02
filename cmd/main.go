@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"errors"
-	"github.com/FrankSantoso/lamat.git/internal/cfg"
-	"github.com/FrankSantoso/lamat.git/internal/repo"
+	"github.com/FrankSantoso/lamat/internal/cfg"
+	"github.com/FrankSantoso/lamat/internal/repo"
 	"github.com/spf13/cobra"
 	"log"
 	"os"

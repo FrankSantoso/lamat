@@ -2,7 +2,8 @@ package repo
 
 import (
 	"fmt"
-	"github.com/FrankSantoso/lamat.git/internal/cfg"
+	"github.com/FrankSantoso/gosm"
+	"github.com/FrankSantoso/lamat/internal/cfg"
 	"github.com/codingsince1985/geo-golang/chained"
 	"github.com/codingsince1985/geo-golang/google"
 	"github.com/codingsince1985/geo-golang/mapquest/nominatim"
@@ -20,6 +21,15 @@ import (
 type Geo struct {
 	geocoder geo.Geocoder
 	args     []string
+}
+
+// gosmData
+type gosmData struct {
+	Address string
+	OsmType string
+	OsmID   int64
+	Long    string
+	Lat     string
 }
 
 func NewGeo(conf *cfg.Config, args []string) *Geo {
@@ -45,17 +55,22 @@ func getTabWriterOutput() *tabwriter.Writer {
 // GetGeocode location
 func (g *Geo) GetGeocode() error {
 	out := getTabWriterOutput()
-	location, err := g.geocoder.Geocode(g.args[0])
+	location, err := gosm.GetGeo(g.args[0])
 	if err != nil {
-		fmt.Fprintf(out, "\n%s\t%s\n", errColor("Error:"), err)
 		return err
 	}
-	printRow(out, "\n%s\t%s\t%s\n", infoColor("Address"), g.args[0])
-	if location != nil {
-		locRef := reflect.ValueOf(*location)
-		printRows(out, locRef)
+	if location != nil && len(location) > 0 {
+		for _, v := range location {
+			locref := reflect.ValueOf(gosmData{
+				Address: v.Name,
+				OsmType: v.OsmType,
+				OsmID:   v.OsmID,
+				Long:    v.Lon,
+				Lat:     v.Lat,
+			})
+			printRows(out, locref)
+		}
 	}
-
 	out.Flush()
 	return nil
 }
