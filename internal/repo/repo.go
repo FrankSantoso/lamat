@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/FrankSantoso/gosm"
 	"github.com/FrankSantoso/lamat/internal/cfg"
@@ -53,13 +54,13 @@ func getTabWriterOutput() *tabwriter.Writer {
 }
 
 // GetGeocode location
-func (g *Geo) GetGeocode() error {
+func (g *Geo) GetGeocode(outputJson bool) error {
 	out := getTabWriterOutput()
 	location, err := gosm.GetGeo(g.args[0])
 	if err != nil {
 		return err
 	}
-	if location != nil && len(location) > 0 {
+	if location != nil && len(location) > 0 && !outputJson {
 		for _, v := range location {
 			locref := reflect.ValueOf(gosmData{
 				Address: v.Name,
@@ -70,13 +71,19 @@ func (g *Geo) GetGeocode() error {
 			})
 			printRows(out, locref)
 		}
+	} else {
+		jresp, err := json.MarshalIndent(&location, "", "\t")
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(os.Stdout, "%s\n", stringColor(string(jresp)))
 	}
 	out.Flush()
 	return nil
 }
 
 // GetReverseGeocode
-func (g *Geo) GetReverseGeocode() error {
+func (g *Geo) GetReverseGeocode(outputJson bool) error {
 	out := getTabWriterOutput()
 	args, err := strsToFloats(g.args)
 	if err != nil {
@@ -87,11 +94,17 @@ func (g *Geo) GetReverseGeocode() error {
 		fmt.Fprintf(out, "\n%s\t%s\n", errColor("Error:"), err)
 		return err
 	}
-	if gcode != nil {
+	if gcode != nil && !outputJson {
 		gref := reflect.ValueOf(*gcode)
 		printRows(out, gref)
+		out.Flush()
+	} else {
+		jresp, err := json.MarshalIndent(&gcode, "", "\t")
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(os.Stdout, "%s\n", stringColor(string(jresp)))
 	}
-	out.Flush()
 	return nil
 }
 

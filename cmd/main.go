@@ -17,6 +17,7 @@ const (
 
 var (
 	cfgFile string
+	jsonOut bool
 	rootCmd = &cobra.Command{
 		Use:   "lamat [-c] <config_file> [rev|find] [args]",
 		Short: "Small utility to find geocode / reverse geocode",
@@ -40,6 +41,8 @@ var (
 func main() {
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "cfg", "c",
 		"./config", "config files containing nominatim & google api keys")
+	rootCmd.PersistentFlags().BoolVarP(&jsonOut, "json", "j", false,
+		"outputs json instead of strings")
 	rootCmd.AddCommand(findCmd, reverseCmd)
 	// create new context
 	ctx, _ := context.WithTimeout(context.Background(), globalTimeout)
@@ -69,7 +72,7 @@ func findGeocode(c *cobra.Command, args []string) {
 		log.Fatalf("Config file not found in context: %v", err)
 	}
 	g := repo.NewGeo(config, args)
-	if err = g.GetGeocode(); err != nil {
+	if err = g.GetGeocode(jsonOut); err != nil {
 		log.Fatalf("Error finding geocode: %v", err)
 		os.Exit(1)
 	}
@@ -81,7 +84,7 @@ func findRevGeocode(c *cobra.Command, args []string) {
 		log.Fatalf("Config file not found in context: %v", err)
 	}
 	g := repo.NewGeo(config, args)
-	if err = g.GetReverseGeocode(); err != nil {
+	if err = g.GetReverseGeocode(jsonOut); err != nil {
 		log.Fatalf("Error finding geocode: %v", err)
 		os.Exit(1)
 	}
